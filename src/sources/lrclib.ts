@@ -1,7 +1,7 @@
 import { LRCLIB_API_BASE } from '../lib/config'
 import { httpGet } from '../lib/http'
 import { getLogger } from '../lib/logger'
-import { type LyricResult, parseLrc } from './base'
+import { buildResult, defineFetcher, parseLrc } from './base'
 
 const logger = getLogger('fetcher/lrclib')
 
@@ -59,54 +59,43 @@ function pickLyrics(
 	return { lyrics, synced }
 }
 
-export const lrclibFetcher = {
-	async fetch(
-		artist: string,
-		song: string,
-		timestamps: boolean,
-		signal?: AbortSignal,
-	): Promise<LyricResult | null> {
-		try {
-			logger.info(`LRCLIB: fetching '${artist} – ${song}' (timestamps=${timestamps})`)
+export const lrclibFetcher = defineFetcher({
+	source: 'lrclib',
+	displayName: 'LRCLIB',
+	async run(artist, song, timestamps, signal) {
+		const track = await lrclibSearch(artist, song, signal)
+		if (!track) return null
 
-			const track = await lrclibSearch(artist, song, signal)
-			if (!track) return null
+		const data = await lrclibGet(track, signal)
+		if (!data) return null
 
-			const data = await lrclibGet(track, signal)
-			if (!data) return null
+		const picked = pickLyrics(data, timestamps)
+		if (!picked) return null
+		const { lyrics, synced } = picked
 
-			const picked = pickLyrics(data, timestamps)
-			if (!picked) return null
-			const { lyrics, synced } = picked
+		const durationMs = data.duration ? Number(data.duration) * 1000 : undefined
+		let timedLyrics: ReturnType<typeof parseLrc> | undefined
+		let hasTimestamps = false
 
-			const durationMs = data.duration ? Number(data.duration) * 1000 : undefined
-			let timedLyrics: ReturnType<typeof parseLrc> | undefined
-			let hasTimestamps = false
-
-			if (timestamps && synced) {
-				const parsed = parseLrc(synced, durationMs)
-				if (parsed.length) {
-					timedLyrics = parsed
-					hasTimestamps = true
-				}
+		if (timestamps && synced) {
+			const parsed = parseLrc(synced, durationMs)
+			if (parsed.length) {
+				timedLyrics = parsed
+				hasTimestamps = true
 			}
-
-			logger.info(`LRCLIB: success (hasTimestamps=${hasTimestamps})`)
-			return {
-				source: 'lrclib',
-				artist: String(data.artistName ?? artist),
-				title: String(data.trackName ?? song),
-				album: data.albumName,
-				duration: data.duration,
-				instrumental: Boolean(data.instrumental),
-				lyrics,
-				hasTimestamps,
-				timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
-				...(timedLyrics ? { timed_lyrics: timedLyrics } : {}),
-			}
-		} catch (err) {
-			logger.error(`LRCLIB error: ${err}`)
-			return null
 		}
+
+		logger.info(`LRCLIB: success (hasTimestamps=${hasTimestamps})`)
+		return buildResult({
+			source: 'lrclib',
+			artist: String(data.artistName ?? artist),
+			title: String(data.trackName ?? song),
+			album: data.albumName,
+			duration: data.duration,
+			instrumental: Boolean(data.instrumental),
+			lyrics,
+			has_timestamps: hasTimestamps,
+			timed_lyrics: timedLyrics,
+		})
 	},
-}
+})

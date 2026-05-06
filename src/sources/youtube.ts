@@ -1,6 +1,6 @@
 import YTMusic from 'ytmusic-api'
 import { getLogger } from '../lib/logger'
-import { buildResult, type LyricResult } from './base'
+import { buildResult, defineFetcher } from './base'
 
 const logger = getLogger('fetcher/youtube')
 
@@ -29,49 +29,40 @@ async function getYTMusic(): Promise<YTMusic | null> {
 	return ytmusic
 }
 
-export const youtubeFetcher = {
-	async fetch(
-		artist: string,
-		song: string,
-		_timestamps: boolean,
-		_signal?: AbortSignal,
-	): Promise<LyricResult | null> {
-		try {
-			logger.info(`YouTube Music: fetching '${artist} – ${song}'`)
-			const yt = await getYTMusic()
-			if (!yt) return null
+export const youtubeFetcher = defineFetcher({
+	source: 'youtube_music',
+	displayName: 'YouTube Music',
+	async run(artist, song) {
+		const yt = await getYTMusic()
+		if (!yt) return null
 
-			const results = await yt.searchSongs(`${song} ${artist}`)
-			if (!results.length) return null
+		const results = await yt.searchSongs(`${song} ${artist}`)
+		if (!results.length) return null
 
-			const artistLower = artist.toLowerCase()
-			let videoId: string | null = null
-			for (const r of results) {
-				const rArtist = (r.artist?.name ?? '').toLowerCase()
-				if (rArtist.includes(artistLower)) {
-					videoId = r.videoId
-					break
-				}
+		const artistLower = artist.toLowerCase()
+		let videoId: string | null = null
+		for (const r of results) {
+			const rArtist = (r.artist?.name ?? '').toLowerCase()
+			if (rArtist.includes(artistLower)) {
+				videoId = r.videoId
+				break
 			}
-			if (!videoId) videoId = results[0]?.videoId ?? null
-			if (!videoId) return null
-
-			const lyricsLines = await yt.getLyrics(videoId)
-			if (!lyricsLines) return null
-
-			const lyrics = lyricsLines.join('\n')
-			if (!lyrics.trim()) return null
-
-			return buildResult({
-				source: 'youtube_music',
-				artist,
-				title: song,
-				lyrics,
-				has_timestamps: false,
-			})
-		} catch (err) {
-			logger.error(`YouTube Music error: ${err}`)
-			return null
 		}
+		if (!videoId) videoId = results[0]?.videoId ?? null
+		if (!videoId) return null
+
+		const lyricsLines = await yt.getLyrics(videoId)
+		if (!lyricsLines) return null
+
+		const lyrics = lyricsLines.join('\n')
+		if (!lyrics.trim()) return null
+
+		return buildResult({
+			source: 'youtube_music',
+			artist,
+			title: song,
+			lyrics,
+			has_timestamps: false,
+		})
 	},
-}
+})

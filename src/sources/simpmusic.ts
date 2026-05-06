@@ -1,8 +1,6 @@
 import { httpGet } from '../lib/http'
-import { getLogger } from '../lib/logger'
-import { buildResult, type LyricResult, parseLrc } from './base'
+import { buildResult, defineFetcher, parseLrc } from './base'
 
-const logger = getLogger('fetcher/simpmusic')
 const API_BASE = 'https://api-lyrics.simpmusic.org/v1'
 
 async function simpmusicSearch(
@@ -44,35 +42,25 @@ async function simpmusicGetLyrics(
 	return { lyrics, synced }
 }
 
-export const simpmusicFetcher = {
-	async fetch(
-		artist: string,
-		song: string,
-		timestamps: boolean,
-		signal?: AbortSignal,
-	): Promise<LyricResult | null> {
-		try {
-			logger.info(`SimpMusic: fetching '${artist} – ${song}'`)
+export const simpmusicFetcher = defineFetcher({
+	source: 'simpmusic',
+	displayName: 'SimpMusic',
+	async run(artist, song, timestamps, signal) {
+		const track = await simpmusicSearch(artist, song, signal)
+		if (!track) return null
 
-			const track = await simpmusicSearch(artist, song, signal)
-			if (!track) return null
+		const picked = await simpmusicGetLyrics(track.videoId, timestamps, signal)
+		if (!picked) return null
 
-			const picked = await simpmusicGetLyrics(track.videoId, timestamps, signal)
-			if (!picked) return null
+		const timed = timestamps && picked.synced ? parseLrc(picked.synced) : undefined
 
-			const timed = timestamps && picked.synced ? parseLrc(picked.synced) : undefined
-
-			return buildResult({
-				source: 'simpmusic',
-				artist: (track.artistName as string | undefined) ?? artist,
-				title: (track.title as string | undefined) ?? song,
-				lyrics: picked.lyrics,
-				timed_lyrics: timed,
-				has_timestamps: Boolean(timed?.length),
-			})
-		} catch (err) {
-			logger.error(`SimpMusic error: ${err}`)
-			return null
-		}
+		return buildResult({
+			source: 'simpmusic',
+			artist: (track.artistName as string | undefined) ?? artist,
+			title: (track.title as string | undefined) ?? song,
+			lyrics: picked.lyrics,
+			timed_lyrics: timed,
+			has_timestamps: Boolean(timed?.length),
+		})
 	},
-}
+})

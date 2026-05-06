@@ -1,19 +1,9 @@
 import { getLogger } from './lib/logger'
 import { type ValidationResult, validateLyricsMatch } from './lib/validator'
-import { ALL_FETCHERS } from './sources'
+import { SOURCE_BY_ID, SOURCE_BY_KEY, SOURCES } from './sources'
 import type { LyricResult } from './sources/base'
 
 const logger = getLogger('fetcher/fetch_controller')
-
-const FETCHER_MAP: Record<number, [string, string]> = {
-	1: ['Genius', 'genius'],
-	2: ['LRCLIB', 'lrclib'],
-	3: ['SimpMusic', 'simpmusic'],
-	4: ['YouTube Music', 'youtube'],
-	5: ['Lyrics.ovh', 'lyricsovh'],
-	6: ['ChartLyrics', 'chartlyrics'],
-	7: ['Letras', 'letras'],
-}
 
 const DEFAULT_SYNCED_SEQUENCE = [2, 3, 4, 5]
 const DEFAULT_PLAIN_SEQUENCE = [1, 2, 3, 4, 5, 6, 7]
@@ -36,7 +26,7 @@ interface Attempt {
 }
 
 async function fetchWithTimeout(
-	apiName: string,
+	displayName: string,
 	fetcherKey: string,
 	artist: string,
 	song: string,
@@ -44,22 +34,23 @@ async function fetchWithTimeout(
 	timeoutMs = 35_000,
 	signal?: AbortSignal,
 ): Promise<Attempt> {
-	const fetcher = ALL_FETCHERS[fetcherKey]
-	if (!fetcher) return { api: apiName, success: false, reason: 'not_configured' }
+	const source = SOURCE_BY_KEY.get(fetcherKey)
+	if (!source) return { api: displayName, success: false, reason: 'not_configured' }
 
 	try {
 		const result = await Promise.race<LyricResult | null>([
-			fetcher.fetch(artist, song, timestamps, signal),
+			source.fetcher.fetch(artist, song, timestamps, signal),
 			new Promise<null>((_, reject) => setTimeout(() => reject(new Error('timeout')), timeoutMs)),
 		])
-		if (result?.lyrics) return { api: apiName, success: true, result }
-		return { api: apiName, success: false, reason: 'no_lyrics' }
+		if (result?.lyrics) return { api: displayName, success: true, result }
+		return { api: displayName, success: false, reason: 'no_lyrics' }
 	} catch (e) {
-		if (signal?.aborted) return { api: apiName, success: false, reason: 'aborted' }
+		if (signal?.aborted) return { api: displayName, success: false, reason: 'aborted' }
 		const reason = e instanceof Error ? e.message : String(e)
-		if (reason === 'timeout') logger.warning(`[${apiName}] timed out after ${timeoutMs / 1000}s`)
-		else logger.error(`[${apiName}] error: ${reason}`)
-		return { api: apiName, success: false, reason }
+		if (reason === 'timeout')
+			logger.warning(`[${displayName}] timed out after ${timeoutMs / 1000}s`)
+		else logger.error(`[${displayName}] error: ${reason}`)
+		return { api: displayName, success: false, reason }
 	}
 }
 
@@ -74,9 +65,8 @@ async function fetchParallel(
 	fetcherIds: number[],
 ): Promise<[LyricResult | null, Attempt[]]> {
 	const entries = fetcherIds
-		.filter((id) => id in FETCHER_MAP)
-		.map((id) => FETCHER_MAP[id] as [string, string])
-		.filter(([, key]) => ALL_FETCHERS[key])
+		.map((id) => SOURCE_BY_ID.get(id))
+		.filter((s): s is NonNullable<typeof s> => s !== undefined)
 
 	if (!entries.length) return [null, []]
 
@@ -85,9 +75,9 @@ async function fetchParallel(
 	const { signal } = controller
 
 	type Tagged = { task: Promise<Tagged>; attempt: Attempt }
-	let pending: Promise<Tagged>[] = entries.map(([apiName, key]) => {
+	let pending: Promise<Tagged>[] = entries.map(({ key, displayName }) => {
 		const p: Promise<Tagged> = fetchWithTimeout(
-			apiName,
+			displayName,
 			key,
 			artist,
 			song,
@@ -141,17 +131,18 @@ function resolveSequence(
 		return { fetcherIds: FAST_MODE_SEQUENCE, useParallel: true }
 	}
 	if (passParam && sequence) {
+		const maxId = SOURCES.length
 		const parsed = sequence
 			.split(',')
 			.map((x) => parseInt(x.trim(), 10))
 			.filter((x) => !Number.isNaN(x))
 		if (
 			!parsed.length ||
-			!parsed.every((x) => x >= 1 && x <= 7) ||
-			parsed.length > 7 ||
+			!parsed.every((x) => x >= 1 && x <= maxId) ||
+			parsed.length > maxId ||
 			new Set(parsed).size !== parsed.length
 		) {
-			return { error: errResp('Invalid sequence: must be unique numbers between 1 and 7') }
+			return { error: errResp(`Invalid sequence: must be unique numbers between 1 and ${maxId}`) }
 		}
 		return { fetcherIds: parsed, useParallel: parsed.length > 1 }
 	}
@@ -188,13 +179,13 @@ export async function fetchLyricsController(
 	source: string | null = null,
 ): Promise<Record<string, unknown>> {
 	if (source) {
-		const fetcher = ALL_FETCHERS[source]
-		if (!fetcher)
-			return errResp(`Unknown source '${source}'. Valid: ${Object.keys(ALL_FETCHERS).join(', ')}`)
+		const descriptor = SOURCE_BY_KEY.get(source)
+		if (!descriptor)
+			return errResp(`Unknown source '${source}'. Valid: ${SOURCES.map((s) => s.key).join(', ')}`)
 
 		try {
 			const raw = await Promise.race<LyricResult | null>([
-				fetcher.fetch(artistName, songTitle, timestamps),
+				descriptor.fetcher.fetch(artistName, songTitle, timestamps),
 				new Promise<null>((_, reject) => setTimeout(() => reject(new Error('timeout')), 35_000)),
 			])
 			if (!raw?.lyrics)
@@ -222,11 +213,12 @@ export async function fetchLyricsController(
 	}
 
 	for (const fid of fetcherIds) {
-		if (!(fid in FETCHER_MAP)) continue
-		const [apiName, key] = FETCHER_MAP[fid] as [string, string]
-		const fetcher = ALL_FETCHERS[key]
+		const descriptor = SOURCE_BY_ID.get(fid)
+		if (!descriptor) continue
+		const { displayName, key } = descriptor
+		const fetcher = SOURCE_BY_KEY.get(key)?.fetcher
 		if (!fetcher) {
-			logger.warning(`[${apiName}] not configured`)
+			logger.warning(`[${displayName}] not configured`)
 			continue
 		}
 		try {
@@ -237,13 +229,15 @@ export async function fetchLyricsController(
 			if (!raw?.lyrics) continue
 			const val = validateLyricsMatch(artistName, songTitle, raw as Record<string, unknown>, 0.75)
 			if (val.valid) {
-				logger.info(`✓ [${apiName}] accepted (artist=${val.artist_match} song=${val.song_match})`)
+				logger.info(
+					`✓ [${displayName}] accepted (artist=${val.artist_match} song=${val.song_match})`,
+				)
 				return { data: raw }
 			} else {
-				logger.warning(`✗ [${apiName}] rejected: ${val.reason} — trying next fetcher`)
+				logger.warning(`✗ [${displayName}] rejected: ${val.reason} — trying next fetcher`)
 			}
 		} catch (e) {
-			logger.error(`[${apiName}] exception: ${e}`)
+			logger.error(`[${displayName}] exception: ${e}`)
 		}
 	}
 

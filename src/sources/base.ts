@@ -1,3 +1,5 @@
+import { getLogger } from '../lib/logger'
+
 export interface TimedLine {
 	id: string
 	text: string
@@ -80,4 +82,30 @@ export interface Fetcher {
 		timestamps: boolean,
 		signal?: AbortSignal,
 	): Promise<LyricResult | null>
+}
+
+export interface FetcherDef {
+	source: string
+	displayName: string
+	run(
+		artist: string,
+		song: string,
+		timestamps: boolean,
+		signal?: AbortSignal,
+	): Promise<LyricResult | null>
+}
+
+export function defineFetcher(def: FetcherDef): Fetcher {
+	const log = getLogger(`fetcher/${def.source}`)
+	return {
+		async fetch(artist, song, timestamps, signal) {
+			try {
+				log.info(`${def.displayName}: fetching '${artist} – ${song}'`)
+				return await def.run(artist, song, timestamps, signal)
+			} catch (err) {
+				log.error(`${def.displayName} error: ${err}`)
+				return null
+			}
+		},
+	}
 }
