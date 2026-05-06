@@ -21,7 +21,10 @@ bun install
 bun run dev
 ```
 
-Server starts at `http://localhost:4000`. Docs at `http://localhost:4000/docs`.
+Server starts at http://localhost:4000. 
+Docs at http://localhost:4000/docs.
+
+For a live demo, see https://letrisima.onrender.com ([docs](https://letrisima.onrender.com/docs))
 
 ## Environment Variables
 
