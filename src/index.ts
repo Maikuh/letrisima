@@ -7,12 +7,7 @@ import { PORT } from './lib/config'
 import { getLogger } from './lib/logger'
 import { timestamp } from './lib/response'
 import { httpLogger } from './plugins/http-logger'
-import { analyticsRoutes } from './routes/analytics'
-import { cacheRoutes } from './routes/cache'
-import { healthRoute } from './routes/health'
-import { lyricsRoutes } from './routes/lyrics'
-import { suggestionsRoute } from './routes/suggestions'
-import { trendingRoute } from './routes/trending'
+import { routes } from './routes'
 
 const app = new Elysia()
 	.get('/favicon.ico', ({ set }) => {
@@ -75,14 +70,9 @@ const app = new Elysia()
 		set.status = 500
 		return { status: 'error', error: { message: 'Internal server error', timestamp: timestamp() } }
 	})
-	.use(healthRoute)
-	.use(lyricsRoutes)
-	.use(trendingRoute)
-	.use(analyticsRoutes)
-	.use(suggestionsRoute)
-	.use(cacheRoutes)
+	.use(routes)
 	.listen({ port: PORT, idleTimeout: 60 })
 
 const logger = getLogger('app')
-logger.info(`letrisima running at http://${app.server?.hostname}:${app.server?.port}`)
+logger.info(`letrisima API running at http://${app.server?.hostname}:${app.server?.port}/api`)
 logger.info(`OpenAPI docs at http://${app.server?.hostname}:${app.server?.port}/docs`)
