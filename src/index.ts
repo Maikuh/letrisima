@@ -23,6 +23,10 @@ const app = new Elysia()
 					title: 'Letrisima',
 					version: pkg.version,
 					description: 'Multi-source lyrics API with trending and analytics.',
+					license: {
+						name: 'GNU GPLv3',
+						url: 'https://github.com/Maikuh/letrisima/blob/main/LICENSE',
+					},
 				},
 				tags: [
 					{ name: 'Lyrics', description: 'Fetch lyrics' },
