@@ -1,13 +1,21 @@
 import { getLogger } from './lib/logger'
 import { type ValidationResult, validateLyricsMatch } from './lib/validator'
-import { SOURCE_BY_ID, SOURCE_BY_KEY, SOURCES } from './sources'
+import { SOURCE_BY_KEY, SOURCES } from './sources'
 import type { LyricResult } from './sources/base'
 
 const logger = getLogger('fetcher/fetch_controller')
 
-const DEFAULT_SYNCED_SEQUENCE = [2, 3, 4, 5]
-const DEFAULT_PLAIN_SEQUENCE = [1, 2, 3, 4, 5, 6, 7]
-const FAST_MODE_SEQUENCE = [2, 3]
+const DEFAULT_SYNCED_SEQUENCE = ['lrclib', 'simpmusic', 'youtube', 'lyricsovh']
+const DEFAULT_PLAIN_SEQUENCE = [
+	'genius',
+	'lrclib',
+	'simpmusic',
+	'youtube',
+	'lyricsovh',
+	'chartlyrics',
+	'letras',
+]
+const FAST_MODE_SEQUENCE = ['lrclib', 'simpmusic']
 
 function ts(): string {
 	return new Date().toISOString().replace('T', ' ').slice(0, 19)
@@ -62,10 +70,10 @@ async function fetchParallel(
 	artist: string,
 	song: string,
 	timestamps: boolean,
-	fetcherIds: number[],
+	fetcherKeys: string[],
 ): Promise<[LyricResult | null, Attempt[]]> {
-	const entries = fetcherIds
-		.map((id) => SOURCE_BY_ID.get(id))
+	const entries = fetcherKeys
+		.map((key) => SOURCE_BY_KEY.get(key))
 		.filter((s): s is NonNullable<typeof s> => s !== undefined)
 
 	if (!entries.length) return [null, []]
@@ -121,33 +129,41 @@ async function fetchParallel(
 	return [null, allAttempts]
 }
 
+const VALID_KEYS = new Set(SOURCES.map((s) => s.key))
+
 function resolveSequence(
 	fastMode: boolean,
-	passParam: boolean,
 	sequence: string | null,
 	timestamps: boolean,
-): { fetcherIds: number[]; useParallel: boolean } | { error: Record<string, unknown> } {
+): { fetcherKeys: string[]; useParallel: boolean } | { error: Record<string, unknown> } {
 	if (fastMode) {
-		return { fetcherIds: FAST_MODE_SEQUENCE, useParallel: true }
+		return { fetcherKeys: FAST_MODE_SEQUENCE, useParallel: true }
 	}
-	if (passParam && sequence) {
-		const maxId = SOURCES.length
+	if (sequence) {
 		const parsed = sequence
 			.split(',')
-			.map((x) => parseInt(x.trim(), 10))
-			.filter((x) => !Number.isNaN(x))
+			.map((x) => x.trim())
+			.filter(Boolean)
+		const invalid = parsed.filter((k) => !VALID_KEYS.has(k))
 		if (
 			!parsed.length ||
-			!parsed.every((x) => x >= 1 && x <= maxId) ||
-			parsed.length > maxId ||
+			invalid.length > 0 ||
+			parsed.length > SOURCES.length ||
 			new Set(parsed).size !== parsed.length
 		) {
-			return { error: errResp(`Invalid sequence: must be unique numbers between 1 and ${maxId}`) }
+			const validList = SOURCES.map((s) => s.key).join(', ')
+			return {
+				error: errResp(
+					invalid.length
+						? `Unknown source(s): ${invalid.join(', ')}. Valid: ${validList}`
+						: `Invalid sequence: must be unique, non-empty keys from: ${validList}`,
+				),
+			}
 		}
-		return { fetcherIds: parsed, useParallel: parsed.length > 1 }
+		return { fetcherKeys: parsed, useParallel: parsed.length > 1 }
 	}
 	return {
-		fetcherIds: timestamps ? DEFAULT_SYNCED_SEQUENCE : DEFAULT_PLAIN_SEQUENCE,
+		fetcherKeys: timestamps ? DEFAULT_SYNCED_SEQUENCE : DEFAULT_PLAIN_SEQUENCE,
 		useParallel: true,
 	}
 }
@@ -173,7 +189,6 @@ export async function fetchLyricsController(
 	artistName: string,
 	songTitle: string,
 	timestamps = false,
-	passParam = false,
 	sequence: string | null = null,
 	fastMode = false,
 	source: string | null = null,
@@ -196,12 +211,12 @@ export async function fetchLyricsController(
 		}
 	}
 
-	const resolved = resolveSequence(fastMode, passParam, sequence, timestamps)
+	const resolved = resolveSequence(fastMode, sequence, timestamps)
 	if ('error' in resolved) return resolved.error
-	const { fetcherIds, useParallel } = resolved
+	const { fetcherKeys, useParallel } = resolved
 
 	if (useParallel) {
-		const [result, attempts] = await fetchParallel(artistName, songTitle, timestamps, fetcherIds)
+		const [result, attempts] = await fetchParallel(artistName, songTitle, timestamps, fetcherKeys)
 		if (result) return buildParallelSuccess(result, attempts)
 		const sourcesWithResults = attempts.filter((a) => a.success).map((a) => a.api)
 		if (sourcesWithResults.length) {
@@ -212,15 +227,10 @@ export async function fetchLyricsController(
 		return errResp(`No lyrics found for '${songTitle}' by '${artistName}'`)
 	}
 
-	for (const fid of fetcherIds) {
-		const descriptor = SOURCE_BY_ID.get(fid)
+	for (const key of fetcherKeys) {
+		const descriptor = SOURCE_BY_KEY.get(key)
 		if (!descriptor) continue
-		const { displayName, key } = descriptor
-		const fetcher = SOURCE_BY_KEY.get(key)?.fetcher
-		if (!fetcher) {
-			logger.warning(`[${displayName}] not configured`)
-			continue
-		}
+		const { displayName, fetcher } = descriptor
 		try {
 			const raw = await Promise.race<LyricResult | null>([
 				fetcher.fetch(artistName, songTitle, timestamps),
