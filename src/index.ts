@@ -49,10 +49,12 @@ const app = new Elysia()
 		rateLimit({
 			max: 15,
 			duration: 60_000,
-			errorResponse: JSON.stringify({
-				status: 'error',
-				error: { message: 'Too many requests', timestamp: timestamp() },
-			}),
+			errorResponse: new Response(
+				JSON.stringify({
+					error: { message: 'Too many requests', timestamp: timestamp() },
+				}),
+				{ status: 429, headers: { 'Content-Type': 'application/json' } },
+			),
 		}),
 	)
 	.onError(({ code, error, set }) => {

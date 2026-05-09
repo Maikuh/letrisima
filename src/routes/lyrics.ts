@@ -61,6 +61,11 @@ async function handleLyricsRequest(query: LyricsQuery, request: Request): Promis
 		return jsonError('Failed to fetch lyrics', 500, String(e))
 	}
 
+	if (result.status === 'error') {
+		const msg = (result.error as Record<string, unknown>)?.message
+		return jsonError(typeof msg === 'string' ? msg : 'No lyrics found', 404)
+	}
+
 	const data = result.data as Record<string, unknown> | undefined
 	if (data?.lyrics) saveToCache(cacheKey, result)
 
