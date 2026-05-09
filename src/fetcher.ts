@@ -1,4 +1,4 @@
-import { GENIUS_TOKEN } from './lib/config'
+import { config } from './lib/config'
 import { getLogger } from './lib/logger'
 import { type ValidationResult, validateLyricsMatch } from './lib/validator'
 import { SOURCE_BY_KEY, SOURCES } from './sources'
@@ -17,7 +17,7 @@ const DEFAULT_PLAIN_SEQUENCE = [
 ]
 const FAST_MODE_SEQUENCE = ['lrclib', 'simpmusic']
 
-if (GENIUS_TOKEN) DEFAULT_PLAIN_SEQUENCE.push('genius')
+if (config.geniusToken) DEFAULT_PLAIN_SEQUENCE.push('genius')
 
 function ts(): string {
 	return new Date().toISOString().replace('T', ' ').slice(0, 19)

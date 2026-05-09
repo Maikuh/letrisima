@@ -1,7 +1,7 @@
 import pino from 'pino'
-import { LOG_LEVEL } from './config'
+import { config } from './config'
 
-const pinoLevel = LOG_LEVEL === 'WARNING' ? 'warn' : LOG_LEVEL.toLowerCase()
+const pinoLevel = config.logLevel === 'WARNING' ? 'warn' : config.logLevel.toLowerCase()
 
 export const root = pino({
 	level: pinoLevel,

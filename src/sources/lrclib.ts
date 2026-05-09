@@ -1,4 +1,4 @@
-import { LRCLIB_API_BASE } from '../lib/config'
+import { config } from '../lib/config'
 import { httpGet } from '../lib/http'
 import { getLogger } from '../lib/logger'
 import { buildResult, defineFetcher, parseLrc } from './base'
@@ -32,7 +32,7 @@ async function lrclibGet(
 	track: Record<string, unknown>,
 	signal?: AbortSignal,
 ): Promise<Record<string, unknown> | null> {
-	const url = new URL(`${LRCLIB_API_BASE}/get`)
+	const url = new URL(`${config.lrclibApiBase}/get`)
 	if (track.trackName) url.searchParams.set('track_name', String(track.trackName))
 	if (track.artistName) url.searchParams.set('artist_name', String(track.artistName))
 	if (track.albumName) url.searchParams.set('album_name', String(track.albumName))

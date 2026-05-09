@@ -1,4 +1,4 @@
-import { CACHE_TTL } from './config'
+import { config } from './config'
 
 const CACHE_VERSION = 'v2'
 
@@ -45,7 +45,7 @@ export function loadFromCache(key: string): unknown | null {
 }
 
 export function saveToCache(key: string, result: unknown): void {
-	store.set(key, { expiry: Date.now() / 1000 + CACHE_TTL, result })
+	store.set(key, { expiry: Date.now() / 1000 + config.cacheTtl, result })
 }
 
 export function clearCache(): { removed: number } {
@@ -57,7 +57,7 @@ export function clearCache(): { removed: number } {
 export function cacheStats() {
 	return {
 		cache_keys: store.size,
-		ttl_seconds: CACHE_TTL,
+		ttl_seconds: config.cacheTtl,
 		version: CACHE_VERSION,
 	}
 }

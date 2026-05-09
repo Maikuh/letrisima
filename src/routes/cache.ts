@@ -3,7 +3,7 @@ import { timingSafeEqual } from 'node:crypto'
 import { Elysia, t } from 'elysia'
 
 import { cacheStats, clearCache } from '../lib/cache'
-import { ADMIN_KEY } from '../lib/config'
+import { config } from '../lib/config'
 import { getLogger } from '../lib/logger'
 import { jsonError } from '../lib/response'
 import { CacheStats } from '../lib/schemas'
@@ -11,13 +11,13 @@ import { CacheStats } from '../lib/schemas'
 const logger = getLogger('cache')
 
 function checkAdmin(request: Request, queryKey?: string): boolean {
-	if (!ADMIN_KEY) return false
+	if (!config.adminKey) return false
 	const provided = queryKey ?? request.headers.get('x-admin-key') ?? ''
 	if (!provided) return false
 	try {
-		const a = Buffer.from(ADMIN_KEY.padEnd(64).slice(0, 64))
+		const a = Buffer.from(config.adminKey.padEnd(64).slice(0, 64))
 		const b = Buffer.from(provided.padEnd(64).slice(0, 64))
-		return timingSafeEqual(a, b) && provided === ADMIN_KEY
+		return timingSafeEqual(a, b) && provided === config.adminKey
 	} catch {
 		return false
 	}

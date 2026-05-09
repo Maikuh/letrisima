@@ -3,7 +3,7 @@ import { openapi } from '@elysia/openapi'
 import { Elysia } from 'elysia'
 import { rateLimit } from 'elysia-rate-limit'
 import pkg from '../package.json'
-import { PORT } from './lib/config'
+import { config } from './lib/config'
 import { getLogger } from './lib/logger'
 import { timestamp } from './lib/response'
 import { httpLogger } from './plugins/http-logger'
@@ -75,7 +75,7 @@ const app = new Elysia()
 		return { status: 'error', error: { message: 'Internal server error', timestamp: timestamp() } }
 	})
 	.use(routes)
-	.listen({ port: PORT, idleTimeout: 60 })
+	.listen({ port: config.port, idleTimeout: 60 })
 
 const logger = getLogger('app')
 logger.info(`letrisima API running at http://${app.server?.hostname}:${app.server?.port}/api`)

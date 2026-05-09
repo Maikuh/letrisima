@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio'
-import { GENIUS_TOKEN } from '../lib/config'
+import { config } from '../lib/config'
 import { httpGet } from '../lib/http'
 import { getLogger } from '../lib/logger'
 import { buildResult, defineFetcher, type LyricResult } from './base'
@@ -17,14 +17,14 @@ export const geniusFetcher = defineFetcher({
 	source: 'genius',
 	displayName: 'Genius',
 	async run(artist, song, _timestamps, signal): Promise<LyricResult | null> {
-		if (!GENIUS_TOKEN) {
+		if (!config.geniusToken) {
 			logger.info('Genius token not configured — skipping')
 			return null
 		}
 
 		const searchRes = await httpGet(
 			`https://api.genius.com/search?q=${encodeURIComponent(`${song} ${artist}`)}`,
-			{ headers: { Authorization: `Bearer ${GENIUS_TOKEN}` }, signal },
+			{ headers: { Authorization: `Bearer ${config.geniusToken}` }, signal },
 		)
 		if (!searchRes.ok) return null
 
