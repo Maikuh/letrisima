@@ -91,9 +91,9 @@ async function fetchParallel(
 	const { signal } = controller
 
 	type Tagged = { task: Promise<Tagged>; attempt: Attempt }
-	let pending: Promise<Tagged>[] = entries.map(({ key, displayName }) => {
+	let pending: Promise<Tagged>[] = entries.map(({ key, fetcher }) => {
 		const p: Promise<Tagged> = fetchWithTimeout(
-			displayName,
+			fetcher.displayName,
 			key,
 			artist,
 			song,
@@ -238,7 +238,8 @@ export async function fetchLyricsController(
 	for (const key of fetcherKeys) {
 		const descriptor = SOURCE_BY_KEY.get(key)
 		if (!descriptor) continue
-		const { displayName, fetcher } = descriptor
+		const { fetcher } = descriptor
+		const { displayName } = fetcher
 		try {
 			const raw = await Promise.race<LyricResult | null>([
 				fetcher.fetch(artistName, songTitle, timestamps),

@@ -11,20 +11,19 @@ import { youtubeFetcher } from './youtube'
 
 export interface SourceDescriptor {
 	key: string
-	displayName: string
 	fetcher: Fetcher
 }
 
 export const SOURCES: readonly SourceDescriptor[] = [
-	{ key: 'genius', displayName: 'Genius', fetcher: geniusFetcher },
-	{ key: 'lrclib', displayName: 'LRCLIB', fetcher: lrclibFetcher },
-	{ key: 'mxm', displayName: 'Musixmatch', fetcher: mxmFetcher },
-	{ key: 'simpmusic', displayName: 'SimpMusic', fetcher: simpmusicFetcher },
-	{ key: 'youtube', displayName: 'YouTube Music', fetcher: youtubeFetcher },
-	{ key: 'lyricsovh', displayName: 'Lyrics.ovh', fetcher: lyricsovhFetcher },
-	{ key: 'chartlyrics', displayName: 'ChartLyrics', fetcher: chartlyricsFetcher },
-	{ key: 'letras', displayName: 'Letras', fetcher: letrasFetcher },
-	{ key: 'lyricsfreek', displayName: 'LyricsFreek', fetcher: lyricsfreekFetcher },
+	{ key: 'genius', fetcher: geniusFetcher },
+	{ key: 'lrclib', fetcher: lrclibFetcher },
+	{ key: 'mxm', fetcher: mxmFetcher },
+	{ key: 'simpmusic', fetcher: simpmusicFetcher },
+	{ key: 'youtube', fetcher: youtubeFetcher },
+	{ key: 'lyricsovh', fetcher: lyricsovhFetcher },
+	{ key: 'chartlyrics', fetcher: chartlyricsFetcher },
+	{ key: 'letras', fetcher: letrasFetcher },
+	{ key: 'lyricsfreek', fetcher: lyricsfreekFetcher },
 ]
 
 export const SOURCE_BY_KEY = new Map(SOURCES.map((s) => [s.key, s]))

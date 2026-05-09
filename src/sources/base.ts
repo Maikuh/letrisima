@@ -76,6 +76,7 @@ export function parseLrc(lrcText: string, totalDurationMs?: number): TimedLine[]
 }
 
 export interface Fetcher {
+	displayName: string
 	fetch(
 		artist: string,
 		song: string,
@@ -98,6 +99,7 @@ export interface FetcherDef {
 export function defineFetcher(def: FetcherDef): Fetcher {
 	const log = getLogger(`fetcher/${def.source}`)
 	return {
+		displayName: def.displayName,
 		async fetch(artist, song, timestamps, signal) {
 			try {
 				log.debug(`${def.displayName}: fetching '${artist} – ${song}'`)
