@@ -195,7 +195,7 @@ export const mxmFetcher = defineFetcher({
 	source: 'mxm',
 	displayName: 'Musixmatch',
 	async run(artist, song, timestamps, signal): Promise<LyricResult | null> {
-		if (!config.mxmEnabled) return null
+		if (!config.mxm.enabled) return null
 
 		const state = await getToken(signal)
 

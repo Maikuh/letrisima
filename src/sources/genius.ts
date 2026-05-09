@@ -17,14 +17,14 @@ export const geniusFetcher = defineFetcher({
 	source: 'genius',
 	displayName: 'Genius',
 	async run(artist, song, _timestamps, signal): Promise<LyricResult | null> {
-		if (!config.geniusToken) {
+		if (!config.genius.token) {
 			logger.info('Genius token not configured — skipping')
 			return null
 		}
 
 		const searchRes = await httpGet(
 			`https://api.genius.com/search?q=${encodeURIComponent(`${song} ${artist}`)}`,
-			{ headers: { Authorization: `Bearer ${config.geniusToken}` }, signal },
+			{ headers: { Authorization: `Bearer ${config.genius.token}` }, signal },
 		)
 		if (!searchRes.ok) return null
 

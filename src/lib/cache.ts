@@ -45,7 +45,7 @@ export function loadFromCache(key: string): unknown | null {
 }
 
 export function saveToCache(key: string, result: unknown): void {
-	store.set(key, { expiry: Date.now() / 1000 + config.cacheTtl, result })
+	store.set(key, { expiry: Date.now() / 1000 + config.cache.ttl, result })
 }
 
 export function clearCache(): { removed: number } {
@@ -57,7 +57,7 @@ export function clearCache(): { removed: number } {
 export function cacheStats() {
 	return {
 		cache_keys: store.size,
-		ttl_seconds: config.cacheTtl,
+		ttl_seconds: config.cache.ttl,
 		version: CACHE_VERSION,
 	}
 }

@@ -11,13 +11,13 @@ import { CacheStats } from '../lib/schemas'
 const logger = getLogger('cache')
 
 function checkAdmin(request: Request, queryKey?: string): boolean {
-	if (!config.adminKey) return false
+	if (!config.admin.key) return false
 	const provided = queryKey ?? request.headers.get('x-admin-key') ?? ''
 	if (!provided) return false
 	try {
-		const a = Buffer.from(config.adminKey.padEnd(64).slice(0, 64))
+		const a = Buffer.from(config.admin.key.padEnd(64).slice(0, 64))
 		const b = Buffer.from(provided.padEnd(64).slice(0, 64))
-		return timingSafeEqual(a, b) && provided === config.adminKey
+		return timingSafeEqual(a, b) && provided === config.admin.key
 	} catch {
 		return false
 	}

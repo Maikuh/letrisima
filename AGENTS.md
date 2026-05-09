@@ -68,6 +68,8 @@ In-memory `Map`. Key = SHA-256(normalized query params). TTL = `CACHE_TTL` env (
 | `LRCLIB_API_BASE` | `https://lrclib.net/api` | |
 | `ADMIN_KEY` | — | Required for admin cache endpoints |
 | `CACHE_TTL` | `86400` | Seconds |
+| `RATE_LIMIT_MAX` | `15` | Max requests per window; set both to `0` to disable |
+| `RATE_LIMIT_DURATION` | `60000` | Window duration in ms |
 | `NODE_ENV` | — | `production` disables pino-pretty |
 
 ## Key files

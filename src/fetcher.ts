@@ -17,8 +17,8 @@ const DEFAULT_PLAIN_SEQUENCE = [
 ]
 const FAST_MODE_SEQUENCE = ['lrclib', 'simpmusic']
 
-if (config.geniusToken) DEFAULT_PLAIN_SEQUENCE.push('genius')
-if (config.mxmEnabled) {
+if (config.genius.token) DEFAULT_PLAIN_SEQUENCE.push('genius')
+if (config.mxm.enabled) {
 	DEFAULT_PLAIN_SEQUENCE.push('mxm')
 	FAST_MODE_SEQUENCE.push('mxm')
 }

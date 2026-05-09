@@ -47,8 +47,9 @@ const app = new Elysia()
 	.use(cors())
 	.use(
 		rateLimit({
-			max: 15,
-			duration: 60_000,
+			max: config.rateLimit.max,
+			duration: config.rateLimit.duration,
+			skip: config.rateLimit.enabled ? undefined : () => true,
 			errorResponse: new Response(
 				JSON.stringify({
 					error: { message: 'Too many requests', timestamp: timestamp() },
