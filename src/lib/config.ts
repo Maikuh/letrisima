@@ -5,4 +5,5 @@ export const config = {
 	geniusToken: process.env.GENIUS_TOKEN ?? '',
 	lrclibApiBase: process.env.LRCLIB_API_BASE ?? 'https://lrclib.net/api',
 	cacheTtl: Number(process.env.CACHE_TTL ?? 86400),
+	mxmEnabled: (process.env.MXM_ENABLED ?? 'true').toLowerCase() !== 'false',
 }

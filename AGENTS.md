@@ -16,7 +16,7 @@ No test suite exists.
 
 ## Architecture
 
-Multi-source lyrics API. Bun + Elysia (TypeScript). 8 lyric provider integrations race in parallel; first valid match wins and cancels others.
+Multi-source lyrics API. Bun + Elysia (TypeScript). 9 lyric provider integrations race in parallel; first valid match wins and cancels others.
 
 ### Request flow
 
@@ -34,15 +34,15 @@ GET /api/lyrics?artist=X&song=Y
 
 | Mode | Providers |
 |------|-----------|
-| `fast` | LRCLIB + SimpMusic only |
+| `fast` | LRCLIB + SimpMusic + Musixmatch |
 | default synced | LRCLIB, SimpMusic, YouTube, Lyrics.ovh |
-| default plain | all 7 providers |
+| default plain | all 8 providers (+ Genius if token set) |
 | `source=N` | single pinned provider |
 | `pass=true&sequence=1,2,3` | custom ordered sequence (sequential, not race) |
 
 ### Sources (`src/sources/`)
 
-`SOURCES` array maps IDs 1–8 to fetcher implementations. Each implements `Fetcher.fetch()` returning `LyricResult | null`. Wrapped by `defineFetcher()` with try-catch + logging. New sources: implement `base.ts` interface, register in `sources/index.ts`.
+`SOURCES` array maps string keys to fetcher implementations. Each implements `Fetcher.fetch()` returning `LyricResult | null`. Wrapped by `defineFetcher()` with try-catch + logging. New sources: implement `base.ts` interface, register in `sources/index.ts`.
 
 ### Validation (`src/lib/validator.ts`)
 
@@ -64,6 +64,7 @@ In-memory `Map`. Key = SHA-256(normalized query params). TTL = `CACHE_TTL` env (
 | `PORT` | `4000` | |
 | `LOG_LEVEL` | `INFO` | DEBUG/INFO/WARN/ERROR |
 | `GENIUS_TOKEN` | — | Required to enable Genius source |
+| `MXM_ENABLED` | `true` | Set to `false` to disable Musixmatch source |
 | `LRCLIB_API_BASE` | `https://lrclib.net/api` | |
 | `ADMIN_KEY` | — | Required for admin cache endpoints |
 | `CACHE_TTL` | `86400` | Seconds |

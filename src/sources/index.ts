@@ -5,6 +5,7 @@ import { letrasFetcher } from './letras'
 import { lrclibFetcher } from './lrclib'
 import { lyricsfreekFetcher } from './lyricsfreek'
 import { lyricsovhFetcher } from './lyricsovh'
+import { mxmFetcher } from './mxm'
 import { simpmusicFetcher } from './simpmusic'
 import { youtubeFetcher } from './youtube'
 
@@ -17,6 +18,7 @@ export interface SourceDescriptor {
 export const SOURCES: readonly SourceDescriptor[] = [
 	{ key: 'genius', displayName: 'Genius', fetcher: geniusFetcher },
 	{ key: 'lrclib', displayName: 'LRCLIB', fetcher: lrclibFetcher },
+	{ key: 'mxm', displayName: 'Musixmatch', fetcher: mxmFetcher },
 	{ key: 'simpmusic', displayName: 'SimpMusic', fetcher: simpmusicFetcher },
 	{ key: 'youtube', displayName: 'YouTube Music', fetcher: youtubeFetcher },
 	{ key: 'lyricsovh', displayName: 'Lyrics.ovh', fetcher: lyricsovhFetcher },

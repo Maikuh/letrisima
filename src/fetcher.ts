@@ -18,6 +18,10 @@ const DEFAULT_PLAIN_SEQUENCE = [
 const FAST_MODE_SEQUENCE = ['lrclib', 'simpmusic']
 
 if (config.geniusToken) DEFAULT_PLAIN_SEQUENCE.push('genius')
+if (config.mxmEnabled) {
+	DEFAULT_PLAIN_SEQUENCE.push('mxm')
+	FAST_MODE_SEQUENCE.push('mxm')
+}
 
 function ts(): string {
 	return new Date().toISOString().replace('T', ' ').slice(0, 19)
