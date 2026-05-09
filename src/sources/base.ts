@@ -100,9 +100,16 @@ export function defineFetcher(def: FetcherDef): Fetcher {
 	return {
 		async fetch(artist, song, timestamps, signal) {
 			try {
-				log.info(`${def.displayName}: fetching '${artist} – ${song}'`)
+				log.debug(`${def.displayName}: fetching '${artist} – ${song}'`)
 				return await def.run(artist, song, timestamps, signal)
 			} catch (err) {
+				if (err instanceof DOMException) {
+					if (err.name === 'AbortError') {
+						log.debug(`${def.displayName} fetch aborted.`)
+						return null
+					}
+				}
+
 				log.error(`${def.displayName} error: ${err}`)
 				return null
 			}

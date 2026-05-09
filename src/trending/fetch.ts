@@ -117,7 +117,7 @@ export async function fetchTrending(country: string, limit = 50): Promise<Trendi
 	}
 
 	const url = `${APPLE_MUSIC_BASE}/${cc}/music/most-played/${cap}/songs.json`
-	logger.info(`Fetching trending from Apple Music: ${cc.toUpperCase()}`)
+	logger.debug(`Fetching trending from Apple Music: ${cc.toUpperCase()}`)
 
 	try {
 		const res = await httpGet(url, { timeoutMs: 10_000 })

@@ -22,7 +22,7 @@ async function lrclibSearch(
 	}
 	const results: unknown[] = await res.json()
 	if (!Array.isArray(results) || !results.length) {
-		logger.info('LRCLIB: no results found')
+		logger.debug('LRCLIB: no results found')
 		return null
 	}
 	return results[0] as Record<string, unknown>

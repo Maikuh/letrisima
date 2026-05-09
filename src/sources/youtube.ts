@@ -20,7 +20,7 @@ async function getYTMusic(): Promise<YTMusic | null> {
 			const instance = new YTMusic()
 			await instance.initialize()
 			ytmusic = instance
-			logger.info('YTMusic instance created')
+			logger.debug('YTMusic instance created')
 		} catch (err) {
 			logger.error(`Failed to create YTMusic instance: ${err}`)
 		}

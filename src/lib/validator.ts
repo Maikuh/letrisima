@@ -199,7 +199,7 @@ export function validateLyricsMatch(
 	const reqNonLatin = hasNonLatin(normReqSong)
 	const retNonLatin = hasNonLatin(retSong)
 	if (reqNonLatin !== retNonLatin) {
-		logger.info(`Cross-script: '${requestedArtist}-${requestedSong}' → '${retArtists}-${retSong}'`)
+		logger.debug(`Cross-script: '${requestedArtist}-${requestedSong}' → '${retArtists}-${retSong}'`)
 		return ok('Cross-script match — similarity bypassed', 1.0, 1.0, retArtists, retSong, true)
 	}
 
@@ -220,7 +220,7 @@ export function validateLyricsMatch(
 	)
 
 	if (found && songOk) {
-		logger.info(
+		logger.debug(
 			`✓ ${method}: '${requestedArtist}'-'${requestedSong}' [a=${bestArtist.toFixed(2)} s=${songSim.toFixed(2)}]`,
 		)
 		return ok(`Matched via ${method}`, bestArtist, songSim, retArtists, retSong, false)

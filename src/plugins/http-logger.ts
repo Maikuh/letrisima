@@ -17,7 +17,7 @@ function statusColor(s: number) {
 
 function fmtHttpLog(method: string, path: string, status: number, ms: number) {
 	if (!isPretty) return `${method} ${path} ${status} ${ms}ms`
-	return `\x1b[35m${method}${R} ${path} ${statusColor(status)}${status}${R} \x1b[90m${ms}ms${R}`
+	return `\x1b[35m${method}${R} "${decodeURI(path)}" ${statusColor(status)}${status}${R} \x1b[90m${ms}ms${R}`
 }
 
 export const httpLogger = new Elysia({ name: 'http-logger' })

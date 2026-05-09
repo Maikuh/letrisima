@@ -1,3 +1,4 @@
+import { GENIUS_TOKEN } from './lib/config'
 import { getLogger } from './lib/logger'
 import { type ValidationResult, validateLyricsMatch } from './lib/validator'
 import { SOURCE_BY_KEY, SOURCES } from './sources'
@@ -7,7 +8,6 @@ const logger = getLogger('fetcher/fetch_controller')
 
 const DEFAULT_SYNCED_SEQUENCE = ['lrclib', 'simpmusic', 'youtube', 'lyricsovh']
 const DEFAULT_PLAIN_SEQUENCE = [
-	'genius',
 	'lrclib',
 	'simpmusic',
 	'youtube',
@@ -16,6 +16,8 @@ const DEFAULT_PLAIN_SEQUENCE = [
 	'letras',
 ]
 const FAST_MODE_SEQUENCE = ['lrclib', 'simpmusic']
+
+if (GENIUS_TOKEN) DEFAULT_PLAIN_SEQUENCE.push('genius')
 
 function ts(): string {
 	return new Date().toISOString().replace('T', ' ').slice(0, 19)
@@ -57,7 +59,9 @@ async function fetchWithTimeout(
 		const reason = e instanceof Error ? e.message : String(e)
 		if (reason === 'timeout')
 			logger.warning(`[${displayName}] timed out after ${timeoutMs / 1000}s`)
-		else logger.error(`[${displayName}] error: ${reason}`)
+		else {
+			logger.error(`[${displayName}] error: ${reason}`)
+		}
 		return { api: displayName, success: false, reason }
 	}
 }
@@ -112,7 +116,7 @@ async function fetchParallel(
 		const val = validateLyricsMatch(artist, song, attempt.result as Record<string, unknown>, 0.75)
 
 		if (val.valid) {
-			logger.info(
+			logger.debug(
 				`✓ [${attempt.api}] accepted (artist=${val.artist_match} song=${val.song_match} script_mismatch=${val.script_mismatch})`,
 			)
 			attempt.validation = val
@@ -239,7 +243,7 @@ export async function fetchLyricsController(
 			if (!raw?.lyrics) continue
 			const val = validateLyricsMatch(artistName, songTitle, raw as Record<string, unknown>, 0.75)
 			if (val.valid) {
-				logger.info(
+				logger.debug(
 					`✓ [${displayName}] accepted (artist=${val.artist_match} song=${val.song_match})`,
 				)
 				return { data: raw }
